@@ -1,6 +1,6 @@
 '''Создаёт директорию в файловой системе и скачивает в неё фотографии комиксов с их комментариями'''
 
-from Download_image import download_image
+from download_image import download_image
 from pathlib import Path
 from random import randint
 from requests import get

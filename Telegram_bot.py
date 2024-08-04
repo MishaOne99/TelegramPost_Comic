@@ -2,7 +2,7 @@
 
 import os
 import shutil
-from Comic_Downloader import download_comics
+from comic_downloader import download_comics
 from dotenv import load_dotenv
 from telegram import Bot, InputMediaPhoto
 
