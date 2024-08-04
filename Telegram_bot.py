@@ -1,53 +1,43 @@
 """Публикует по запросу пользователя случайный комикс"""
 
 import os
+import shutil
+from Comic_Downloader import download_comics
 from dotenv import load_dotenv
-from Random_comic import returns_random_comic
-from telebot import TeleBot
-from telebot.types import ReplyKeyboardMarkup
-from pathlib import Path
+from telegram import Bot, InputMediaPhoto
 
 
-PATH = 'Comics/'
-
-load_dotenv()
-token = os.environ['API_TELEGRAM_TOKEN']
-bot = TeleBot(token)
+COMIC_PATH = 'Comic/'
+PNG_FORMAT = '.png'
+DIRECTORY_NAME = 'Comic'
 
 
-@bot.message_handler(commands=['start'])
-def display_welcome_screen(message):
-    """Выводит приветствие
+def publish_post(bot: dict, chat_id: str, image: str, coment: str) -> None:
+    link_photo = f'{COMIC_PATH}{image}{PNG_FORMAT}'
 
-    Args:
-        message (_type_): _description_
-    """
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row('Вывести случайный комикс')
-    text = 'Приветствую тебя 👋🏻'
-    bot.send_message(message.chat.id, text, reply_markup=markup)
+    media_img = InputMediaPhoto(media = open(link_photo, 'rb'), caption=coment)
+
+    bot.send_media_group(media=[media_img], chat_id=chat_id)
 
 
-@bot.message_handler(func=lambda message: message.text == 'Вывести случайный комикс')
-def random_output_comics(message):
-    """Выводит случайный комикс и удаляет его с компьютера
-
-    Args:
-        message (_type_): _description_
-    """
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row('Вывести случайный комикс')
-    comic, comment = returns_random_comic()
-    comic_path = f'{PATH}{comic}'
+def publish_images_from_directory(token: str, chat_id: str) -> None:
+    bot = Bot(token)
     
-    bot.send_photo(message.chat.id, open(comic_path, 'rb'))
-    Path.unlink(comic_path)
-    bot.send_message(message.chat.id, comment, reply_markup=markup)
+    comic_title, comic_comment = download_comics()
+    
+    publish_post(bot=bot, chat_id=chat_id, image=comic_title, coment=comic_comment)
+    
+    shutil.rmtree(DIRECTORY_NAME)
 
 
 def main():
     """Запускает бота"""
-    bot.infinity_polling()
+    load_dotenv()
+    
+    token = os.environ['API_TELEGRAM_TOKEN']
+    chat_id = os.environ['CHAT_ID_TELEGRAM']
+    
+    publish_images_from_directory(token=token, chat_id=chat_id)
 
 
 if __name__ == '__main__':
