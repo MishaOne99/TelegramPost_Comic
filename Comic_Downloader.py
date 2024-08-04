@@ -1,55 +1,55 @@
 '''Создаёт директорию в файловой системе и скачивает в неё фотографии комиксов с их комментариями'''
 
-import argparse
 from Download_image import download_image
-from File_writer import save_comment
 from pathlib import Path
+from random import randint
 from requests import get
 from urllib.parse import SplitResult
 
 
-DIRECTORY_NAME = 'Comics'
-PATH = 'Comics/'
+DIRECTORY_NAME = 'Comic'
+PATH = 'Comic/'
 PNG_FORMAT = '.png'
 COMIC_NAME = 'info.0.json'
     
     
-def download_comics(comics_count: int) -> None:
+def get_comic_count() -> int:
+    """Узнаёт номер последнего комикса
+
+    Returns:
+        int: Номер последнего комикса, является количеством комиксов
+    """
+    responce = get('https://xkcd.com/info.0.json')
+    responce.raise_for_status()
+    
+    comic_count = responce.json()['num']
+    
+    return comic_count
+
+
+def download_comics() -> None:
     """Создание директории и загрузка в неё данных
 
     Args:
         comics_count (int): Количество загружаеммых комиксов
     """    
     Path(DIRECTORY_NAME).mkdir(parents=True, exist_ok=True)
+    
+    comic_count = get_comic_count()
+    comic_number = randint(0, comic_count)
 
-    for comic_index in range(1, comics_count+1):
-        url = SplitResult(scheme='https', netloc='xkcd.com', path=f'/{comic_index}/{COMIC_NAME}', query=None, fragment=None)
+    url = SplitResult(scheme='https', netloc='xkcd.com', path=f'/{comic_number}/{COMIC_NAME}', query=None, fragment=None)
 
-        responce = get(url.geturl())
-        responce.raise_for_status()
+    responce = get(url.geturl())
+    responce.raise_for_status()
 
-        comic_info = responce.json()
-        comic_url = comic_info['img']
-        comic_number = comic_info['num']
-        comic_title = comic_info['title']
-        comic_comment = comic_info['alt']
+    comic_info = responce.json()
+    comic_url = comic_info['img']
+    comic_title = comic_info['title']
+    comic_comment = comic_info['alt']
 
-        file_name = f'{PATH}№{comic_number} - {comic_title}{PNG_FORMAT}'
+    file_name = f'{PATH}{comic_title}{PNG_FORMAT}'
 
-        download_image(url=comic_url, file_name=file_name)
-        save_comment(comic_num=comic_number, comic_comment=comic_comment)
-
-
-def main():
-    """Позволяет работать из командной строки
-    """
-    parser = argparse.ArgumentParser(description= 'Downloads xkcd comics')
-    parser.add_argument('Total_Downloaded_Comics', type=int, nargs='?', default=1, help='Enter the number of comics you want to download')
-    args = parser.parse_args()
-
-    comics_count = args.Total_Downloaded_Comics
-    download_comics(comics_count=comics_count)
-
-
-if __name__ == '__main__':
-    main()
+    download_image(url=comic_url, file_name=file_name)
+    
+    return comic_title, comic_comment
