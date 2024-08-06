@@ -1,14 +1,13 @@
 '''Создаёт директорию в файловой системе и скачивает в неё фотографии комиксов с их комментариями'''
 
 from download_image import download_image
-from pathlib import Path
+from os import path
 from random import randint
 from requests import get
 from urllib.parse import SplitResult
 
 
 DIRECTORY_NAME = 'Comic'
-PATH = 'Comic/'
 PNG_FORMAT = '.png'
 COMIC_NAME = 'info.0.json'
     
@@ -27,14 +26,9 @@ def get_comic_count() -> int:
     return comic_count
 
 
-def download_comics() -> None:
-    """Создание директории и загрузка в неё данных
-
-    Args:
-        comics_count (int): Количество загружаеммых комиксов
-    """    
-    Path(DIRECTORY_NAME).mkdir(parents=True, exist_ok=True)
-    
+def download_random_comic() -> list:
+    """Скачивает случайный комикс
+    """
     comic_count = get_comic_count()
     comic_number = randint(0, comic_count)
 
@@ -45,11 +39,12 @@ def download_comics() -> None:
 
     comic_info = responce.json()
     comic_url = comic_info['img']
-    comic_title = comic_info['title']
     comic_comment = comic_info['alt']
+    
+    directory_path = path.join(DIRECTORY_NAME, str(comic_number))
 
-    file_name = f'{PATH}{comic_title}{PNG_FORMAT}'
+    file_name = f'{directory_path}{PNG_FORMAT}'
 
     download_image(url=comic_url, file_name=file_name)
     
-    return comic_title, comic_comment
+    return [comic_number, comic_comment]
