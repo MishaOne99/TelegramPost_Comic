@@ -2,42 +2,49 @@
 
 import os
 import shutil
-from comic_downloader import download_comics
+from comic_downloader import download_random_comic
 from dotenv import load_dotenv
+from os import path
+from pathlib import Path
 from telegram import Bot, InputMediaPhoto
 
 
-COMIC_PATH = 'Comic/'
 PNG_FORMAT = '.png'
 DIRECTORY_NAME = 'Comic'
 
 
-def publish_post(bot: dict, chat_id: str, image: str, coment: str) -> None:
-    link_photo = f'{COMIC_PATH}{image}{PNG_FORMAT}'
+def publish_post(bot: dict, chat_id: str, image: int, coment: str) -> None:
+    directory_path = path.join(DIRECTORY_NAME, str(image))
+    link_photo = f'{directory_path}{PNG_FORMAT}'
 
     media_img = InputMediaPhoto(media = open(link_photo, 'rb'), caption=coment)
 
     bot.send_media_group(media=[media_img], chat_id=chat_id)
 
 
-def publish_images_from_directory(token: str, chat_id: str) -> None:
+def publish_image_from_directory(token: str, chat_id: str) -> list:
     bot = Bot(token)
     
-    comic_title, comic_comment = download_comics()
+    comic_number, comic_comment = download_random_comic()
     
-    publish_post(bot=bot, chat_id=chat_id, image=comic_title, coment=comic_comment)
+    post_publishing_details = [bot, chat_id, comic_number, comic_comment]
     
-    shutil.rmtree(DIRECTORY_NAME)
+    return post_publishing_details
 
 
 def main():
     """Запускает бота"""
     load_dotenv()
-    
     token = os.environ['API_TELEGRAM_TOKEN']
     chat_id = os.environ['CHAT_ID_TELEGRAM']
     
-    publish_images_from_directory(token=token, chat_id=chat_id)
+    Path(DIRECTORY_NAME).mkdir(parents=True, exist_ok=True)
+    
+    try:
+        post_publishing_details = publish_image_from_directory(token=token, chat_id=chat_id)
+        publish_post(*post_publishing_details)
+    finally:
+        shutil.rmtree(DIRECTORY_NAME)
 
 
 if __name__ == '__main__':
